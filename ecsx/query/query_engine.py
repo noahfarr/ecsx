@@ -7,7 +7,7 @@ from ..core.world_state import WorldState
 
 def _require_registered(world: WorldState, names: Iterable[str]) -> None:
     for n in names:
-        if n not in world.component_tables:
+        if n not in world.component_stores:
             raise KeyError(f"Component not registered: {n}")
 
 
@@ -24,10 +24,10 @@ def select(
 
     mask = world.alive_mask
     for name in required:
-        mask = jnp.logical_and(mask, world.component_tables[name].alive_mask)
+        mask = jnp.logical_and(mask, world.component_stores[name].alive_mask)
     for name in forbidden:
         mask = jnp.logical_and(
-            mask, jnp.logical_not(world.component_tables[name].alive_mask)
+            mask, jnp.logical_not(world.component_stores[name].alive_mask)
         )
     return mask
 
