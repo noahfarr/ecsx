@@ -12,14 +12,14 @@ class EntityRegistry:
     """
 
     capacity: int
-    alive_mask: jnp.ndarray  # (capacity,) bool
-    _free_stack: np.ndarray  # host array of free ids (LIFO)
-    _stack_top: int  # index of next free slot in _free_stack
+    alive_mask: jnp.ndarray
+    _free_stack: np.ndarray
+    _stack_top: int
 
     @staticmethod
     def create(capacity: int) -> "EntityRegistry":
         alive_mask = jnp.zeros((capacity,), dtype=bool)
-        free_stack = np.arange(capacity - 1, -1, -1, dtype=np.int32)  # LIFO
+        free_stack = np.arange(capacity - 1, -1, -1, dtype=np.int32)
         return EntityRegistry(capacity, alive_mask, free_stack, capacity)
 
     def spawn(self) -> int:

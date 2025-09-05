@@ -1,12 +1,10 @@
-from typing import TypeAlias, Protocol
-
+from typing import TypeAlias, Any
 import jax
 
-Array: TypeAlias = jax.Array
 Key: TypeAlias = jax.Array
-
+Array: TypeAlias = jax.Array
 ComponentName: TypeAlias = str
 EntityId: TypeAlias = int
+PyTree: TypeAlias = Any
 
 
-class PyTree(Protocol): ...

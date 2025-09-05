@@ -9,7 +9,7 @@ class ComponentSpecification:
     name: str
     shape: tuple[int, ...]
     dtype: jnp.dtype
-    default_value: Any
+    default: Any
 
     def validate_value(self, value) -> jnp.ndarray:
         arr = jnp.asarray(value, self.dtype)
