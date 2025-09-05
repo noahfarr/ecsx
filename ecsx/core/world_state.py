@@ -26,7 +26,7 @@ class WorldState:
     random_key: Key
     time_step: Array  # int32
     capacity: int
-    event_buffers: dict[str, EventBuffer]
+    event_buffers: dict[str, EventBuffer] = None
 
     @staticmethod
     def create(capacity: int, key: Key) -> "WorldState":
@@ -104,14 +104,15 @@ class WorldState:
             self.alive_mask,
             self.random_key,
             self.time_step,
+            self.event_buffers,
         )
         aux = self.capacity
         return children, aux
 
     @classmethod
     def tree_unflatten(cls, aux, children):
-        component_stores, alive_mask, random_key, time_step = children
-        return cls(component_stores, alive_mask, random_key, time_step, aux)
+        component_stores, alive_mask, random_key, time_step, event_buffers = children
+        return cls(component_stores, alive_mask, random_key, time_step, aux, event_buffers)
 
     def _get_store(self, name: ComponentName) -> ComponentStore:
         try:

@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import jax.numpy as jnp
 from jax import tree_util
+import numpy as np
 
 from .component_specification import ComponentSpecification
 
@@ -57,13 +58,22 @@ class ComponentStore:
         new_mask = self.alive_mask.at[indices].set(False)
         return ComponentStore(self.spec, new_data, new_mask)
 
-    # ---- PyTree integration
     def tree_flatten(self):
+        spec = self.spec
+        meta = (
+            spec.name,
+            tuple(spec.shape),
+            np.dtype(spec.dtype).str,
+        )
         children = (self.data, self.alive_mask)
-        aux = self.spec
-        return children, aux
+        return children, meta
+
 
     @classmethod
     def tree_unflatten(cls, aux, children):
+        name, shape, dtype_str = aux
         data, alive_mask = children
-        return cls(aux, data, alive_mask)
+        dtype = jnp.dtype(np.dtype(dtype_str))
+        default_value = jnp.zeros(shape, dtype)
+        spec = ComponentSpecification(name, tuple(shape), dtype, default_value)
+        return cls(spec, data, alive_mask)

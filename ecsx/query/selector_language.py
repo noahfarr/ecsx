@@ -4,6 +4,7 @@ from typing import FrozenSet
 import jax.numpy as jnp
 
 from ..core.world_state import WorldState
+from ..core.static_world import StaticWorld
 from .query_engine import select as _select
 
 
@@ -42,3 +43,9 @@ def AllOf(*names: str) -> Selector:
 
 def Without(*names: str) -> Selector:
     return Selector(required=frozenset(), forbidden=frozenset(names))
+
+
+class CompilableMixin:
+    def compile_for_static(self, static_names: tuple[str, ...]):
+        from .query_engine import compile_selector_for_static
+        return compile_selector_for_static(self.required, self.forbidden, static_names)

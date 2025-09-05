@@ -6,29 +6,28 @@ def grid_observation_system(grid_width: int, grid_height: int):
     H = jnp.array(grid_height, jnp.float32)
 
     def _system(world, key, inputs):
-        # single-goal assumption for v0.1; if multiple, take the first
-        gmask = select(world, required=("GridGoal", "GridPosition"))
-        gidx  = jnp.nonzero(gmask, size=1, fill_value=-1)[0]
-        has_goal = jnp.sum(gmask) > 0
-        goal_xy = jnp.where(has_goal,
-                            world.component_stores["GridPosition"].read(gidx[:1])[0],
-                            jnp.array([0, 0], jnp.int32))
-
+        # single-goal assumption; compute goal_xy without host branching
+        gmask = select(world, required=("GridGoal", "GridPosition"))  # (cap,)
+        gpos_all = world.component_stores["GridPosition"].data        # (cap,2) int32
+        has_any = jnp.any(gmask)
+        # take first goal by masking-and-argmax over a sentinel score
+        scores = jnp.where(gmask, jnp.arange(gmask.shape[0], dtype=jnp.int32), -1)
+        idx = jnp.argmax(scores)                                      # 0 if none; guarded below
+        goal_xy = jnp.where(has_any, gpos_all[idx], jnp.array([0, 0], jnp.int32))
+ 
         # For all with Observation + GridPosition, write [ax/W, ay/H, gx/W, gy/H]
-        mask = select(world, required=("Observation", "GridPosition"))
-        idx  = jnp.nonzero(mask, size=world.capacity, fill_value=-1)[0]
-        cnt  = jnp.sum(mask)
-        if int(cnt) == 0:
-            return world
-
-        apos = world.component_stores["GridPosition"].read(idx[:cnt]).astype(jnp.float32)
-        obs  = jnp.stack([apos[:, 0] / W, apos[:, 1] / H,
-                          jnp.full((int(cnt),), goal_xy[0] / W),
-                          jnp.full((int(cnt),), goal_xy[1] / H)], axis=1)
-
-        store = world.component_stores["Observation"].write(idx[:cnt], obs)
-        world = world._with_store("Observation", store)
+        mask = select(world, required=("Observation", "GridPosition"))  # (cap,)
+        apos = gpos_all.astype(jnp.float32)                             # (cap,2)
+        obs_store = world.component_stores["Observation"]
+        target_dim = obs_store.specification.shape[0]
+ 
+        base = jnp.stack([apos[:, 0] / W, apos[:, 1] / H,
+                          jnp.full((apos.shape[0],), goal_xy[0] / W),
+                          jnp.full((apos.shape[0],), goal_xy[1] / H)], axis=1)  # (cap,4)
+        new_obs = base[:, :target_dim]
+        updated = jnp.where(mask[:, None], new_obs, obs_store.data)
+        obs2 = type(obs_store)(obs_store.specification, updated, obs_store.present_mask)
+        world = world._with_store("Observation", obs2)
         return world
-
-    return _system
-
+ 
+     return _system

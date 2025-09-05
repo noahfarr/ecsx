@@ -5,16 +5,14 @@ def physics_2d(delta_time: float = 0.02):
     dt = jnp.array(delta_time, jnp.float32)
 
     def _system(world, key, inputs):
-        mask = select(world, required=("Position", "Velocity"))
-        idx = jnp.nonzero(mask, size=world.capacity, fill_value=-1)[0]
-        count = jnp.sum(mask)
-
-        pos = world.component_stores["Position"].read(idx[:count])
-        vel = world.component_stores["Velocity"].read(idx[:count])
-        new_pos = pos + vel * dt
-
-        store = world.component_stores["Position"].write(idx[:count], new_pos)
-        world = world._with_store("Position", store)
-        return world
+        # Masked: pos := pos + vel*dt where both Position & Velocity alive.
+        mask = select(world, required=("Position", "Velocity"))        # (cap,)
+        pos_store = world.component_stores["Position"]
+        vel_store = world.component_stores["Velocity"]
+        pos = pos_store.data                                           # (cap,2)
+        vel = vel_store.data                                           # (cap,2)
+        new_pos = jnp.where(mask[:, None], pos + vel * dt, pos)        # (cap,2)
+        pos_store2 = type(pos_store)(pos_store.spec, new_pos, pos_store.alive_mask)
+        return world._with_store("Position", pos_store2)
     return _system
 
