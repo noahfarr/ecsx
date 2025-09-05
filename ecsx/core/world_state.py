@@ -5,67 +5,88 @@ from jax import tree_util
 
 from ecsx.core.typing import Array, Key, ComponentName, EntityId
 from ecsx.core.component_specification import ComponentSpecification
-from ecsx.core.component_table import ComponentTable
+from ecsx.core.component_store import ComponentStore
+from ecsx.events.event_specification import EventSpecification
+from ecsx.events.event_buffer import EventBuffer
 
 
 @tree_util.register_pytree_node_class
 @dataclass
 class WorldState:
     """
-    JAX-friendly immutable world state.
-    - component_tables: mapping[name] -> ComponentTable
+    JAX-friendly immustore world state.
+    - component_stores: mapping[name] -> ComponentStore
     - alive_mask: (capacity,)
     - random_key: PRNG key
     - time_step: int scalar array
     """
 
-    component_tables: dict[ComponentName, ComponentTable]
+    component_stores: dict[ComponentName, ComponentStore]
     alive_mask: Array
     random_key: Key
     time_step: Array  # int32
     capacity: int
+    event_buffers: dict[str, EventBuffer]
 
     @staticmethod
     def create(capacity: int, key: Key) -> "WorldState":
         return WorldState(
-            component_tables={},
+            component_stores={},
             alive_mask=jnp.zeros((capacity,), dtype=bool),
             random_key=key,
             time_step=jnp.array(0, dtype=jnp.int32),
             capacity=capacity,
+            event_buffers={},
         )
 
     def register_component(self, spec: ComponentSpecification) -> "WorldState":
-        if spec.name in self.component_tables:
+        if spec.name in self.component_stores:
             raise ValueError(f"Component already registered: {spec.name}")
-        table = ComponentTable.from_spec(spec, self.capacity)
-        new_tables = dict(self.component_tables)
-        new_tables[spec.name] = table
-        return replace(self, component_tables=new_tables)
+        store = ComponentStore.from_spec(spec, self.capacity)
+        new_stores = dict(self.component_stores)
+        new_stores[spec.name] = store
+        return replace(self, component_stores=new_stores)
+
+    
+    def register_event_buffer(self, specification: EventSpecification) -> "WorldState":
+        if specification.name in self.event_buffers:
+            raise ValueError(f"Event already registered: {specification.name}")
+        buf = EventBuffer.from_specification(specification)
+        new_bufs = dict(self.event_buffers); new_bufs[specification.name] = buf
+        return replace(self, event_buffers=new_bufs)
+
+    def reset_event_buffers(self) -> "WorldState":
+        new_bufs = {k: v.clear() for k, v in self.event_buffers.items()}
+        return replace(self, event_buffers=new_bufs)
+
+    def write_event_buffer(self, name: str, payloads: jnp.ndarray, count: jnp.ndarray) -> "WorldState":
+        buf = self.event_buffers[name].overwrite(payloads, count)
+        new_bufs = dict(self.event_buffers); new_bufs[name] = buf
+        return replace(self, event_buffers=new_bufs)
 
     def add_component_to_entity(
         self, name: ComponentName, entity_id: EntityId, value: Array
     ) -> "WorldState":
-        table = self._get_table(name)
-        value = table.spec.validate_value(value)
-        table = table.write(
+        store = self._get_store(name)
+        value = store.spec.validate_value(value)
+        store = store.write(
             jnp.asarray([entity_id], dtype=jnp.int32), value[jnp.newaxis, ...]
         )
         # ensure entity is considered alive if it now has any component
         new_alive = self.alive_mask.at[entity_id].set(True)
-        new_tables = dict(self.component_tables)
-        new_tables[name] = table
-        return replace(self, component_tables=new_tables, alive_mask=new_alive)
+        new_stores = dict(self.component_stores)
+        new_stores[name] = store
+        return replace(self, component_stores=new_stores, alive_mask=new_alive)
 
     def remove_component_from_entity(
         self, name: ComponentName, entity_id: EntityId
     ) -> "WorldState":
-        table = self._get_table(name)
-        table = table.clear(jnp.asarray([entity_id], dtype=jnp.int32))
+        store = self._get_store(name)
+        store = store.clear(jnp.asarray([entity_id], dtype=jnp.int32))
         # Do NOT auto-clear alive here; liveness is controlled by the registry / host sync.
-        new_tables = dict(self.component_tables)
-        new_tables[name] = table
-        return replace(self, component_tables=new_tables)
+        new_stores = dict(self.component_stores)
+        new_stores[name] = store
+        return replace(self, component_stores=new_stores)
 
     def with_alive_mask(self, alive_mask: Array) -> "WorldState":
         if (
@@ -79,7 +100,7 @@ class WorldState:
 
     def tree_flatten(self):
         children = (
-            self.component_tables,
+            self.component_stores,
             self.alive_mask,
             self.random_key,
             self.time_step,
@@ -89,16 +110,16 @@ class WorldState:
 
     @classmethod
     def tree_unflatten(cls, aux, children):
-        component_tables, alive_mask, random_key, time_step = children
-        return cls(component_tables, alive_mask, random_key, time_step, aux)
+        component_stores, alive_mask, random_key, time_step = children
+        return cls(component_stores, alive_mask, random_key, time_step, aux)
 
-    def _get_table(self, name: ComponentName) -> ComponentTable:
+    def _get_store(self, name: ComponentName) -> ComponentStore:
         try:
-            return self.component_tables[name]
+            return self.component_stores[name]
         except KeyError as e:
             raise KeyError(f"Component not registered: {name}") from e
 
-    def _with_table(self, name: ComponentName, table: ComponentTable) -> "WorldState":
-        new_tables = dict(self.component_tables)
-        new_tables[name] = table
-        return replace(self, component_tables=new_tables)
+    def _with_store(self, name: ComponentName, store: ComponentStore) -> "WorldState":
+        new_stores = dict(self.component_stores)
+        new_stores[name] = store
+        return replace(self, component_stores=new_stores)
