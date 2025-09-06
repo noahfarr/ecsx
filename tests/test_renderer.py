@@ -10,16 +10,22 @@ def test_renderer_output():
         obstacle_positions=[(1, 1)],
         goal_position=(2, 2),
     )
-    renderer = GridRenderer(grid_size=(3, 3), cell_size=1)
+    renderer = GridRenderer(grid_size=(3, 3), cell_size=16)
     env.reset()
     img = renderer.render(env.world, goal_position=(2, 2))
-    assert img.shape == (3, 3, 4)
+    assert img.shape == (48, 48, 4)
+
+    def center_pixel(cell: tuple[int, int]) -> np.ndarray:
+        cx = cell[0] * 16 + 8
+        cy = cell[1] * 16 + 8
+        return img[cy, cx]
+
     blue = np.array([0, 121, 241, 255], np.uint8)
     gray = np.array([130, 130, 130, 255], np.uint8)
-    green = np.array([0, 228, 48, 255], np.uint8)
-    assert np.any((img == blue).all(axis=-1))
-    assert np.any((img == gray).all(axis=-1))
-    assert np.any((img == green).all(axis=-1))
+    yellow = np.array([253, 249, 0, 255], np.uint8)
+    assert (center_pixel((0, 0)) == blue).all()
+    assert (center_pixel((1, 1)) == gray).all()
+    assert (center_pixel((2, 2)) == yellow).all()
 
 
 def test_renderer_returns_owned_array():
@@ -29,7 +35,7 @@ def test_renderer_returns_owned_array():
         obstacle_positions=[(1, 1)],
         goal_position=(2, 2),
     )
-    renderer = GridRenderer(grid_size=(3, 3), cell_size=1)
+    renderer = GridRenderer(grid_size=(3, 3), cell_size=16)
     env.reset()
     img = renderer.render(env.world, goal_position=(2, 2))
     # The renderer should return an array that owns its memory so it remains valid
