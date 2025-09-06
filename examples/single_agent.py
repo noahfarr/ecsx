@@ -1,6 +1,7 @@
 import jax.numpy as jnp
-from ecsx.envs import build_grid_world
+from ecsx.environments import build_grid_world
 from ecsx.rendering import GridRenderer
+
 
 def main():
     env = build_grid_world(num_agents=1, grid_size=(5, 5), goal_position=(4, 4))
@@ -13,6 +14,7 @@ def main():
         img = renderer.render(env.world, goal_position=(4, 4))
         print("obs", obs, "rew", rew, "done", done, "image", img.shape)
         break
+
 
 if __name__ == "__main__":
     main()

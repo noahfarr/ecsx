@@ -1,11 +1,14 @@
 import numpy as np
-from ecsx.envs import build_grid_world
+from ecsx.environments import build_grid_world
 from ecsx.rendering import GridRenderer
 
 
 def test_renderer_output():
     env = build_grid_world(
-        num_agents=1, grid_size=(3, 3), obstacle_positions=[(1, 1)], goal_position=(2, 2)
+        num_agents=1,
+        grid_size=(3, 3),
+        obstacle_positions=[(1, 1)],
+        goal_position=(2, 2),
     )
     renderer = GridRenderer(grid_size=(3, 3), cell_size=1)
     env.reset()
@@ -21,7 +24,10 @@ def test_renderer_output():
 
 def test_renderer_returns_owned_array():
     env = build_grid_world(
-        num_agents=1, grid_size=(3, 3), obstacle_positions=[(1, 1)], goal_position=(2, 2)
+        num_agents=1,
+        grid_size=(3, 3),
+        obstacle_positions=[(1, 1)],
+        goal_position=(2, 2),
     )
     renderer = GridRenderer(grid_size=(3, 3), cell_size=1)
     env.reset()

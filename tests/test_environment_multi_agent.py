@@ -1,5 +1,5 @@
 import jax.numpy as jnp
-from ecsx.envs import build_grid_world
+from ecsx.environments import build_grid_world
 
 
 def test_multi_agent_environment():
