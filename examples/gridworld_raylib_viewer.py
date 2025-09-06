@@ -40,6 +40,14 @@ GRID_WIDTH, GRID_HEIGHT = 16, 12
 CELL_SIZE = 40
 WINDOW_W, WINDOW_H = GRID_WIDTH * CELL_SIZE, GRID_HEIGHT * CELL_SIZE
 
+# pleasant pastel color palette
+BG_COLOR_A = rl.Color(236, 240, 241, 255)
+BG_COLOR_B = rl.Color(220, 223, 225, 255)
+GRID_LINE_COLOR = rl.Color(189, 195, 199, 255)
+OBSTACLE_COLOR = rl.DARKGRAY
+AGENT_COLOR = rl.RED
+GOAL_COLOR = rl.GOLD
+
 def build_world() -> World:
     w = World(capacity=256, key=jax.random.PRNGKey(0))
     w.register_component(get_grid_position_specification())
@@ -100,13 +108,19 @@ def main():
 
         # draw
         rl.begin_drawing()
-        rl.clear_background(rl.RAYWHITE)
+        rl.clear_background(BG_COLOR_A)
+
+        # cell background pattern
+        for x in range(GRID_WIDTH):
+            for y in range(GRID_HEIGHT):
+                col = BG_COLOR_A if (x + y) % 2 == 0 else BG_COLOR_B
+                rl.draw_rectangle(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE, col)
 
         # grid lines
         for x in range(GRID_WIDTH + 1):
-            rl.draw_line(x * CELL_SIZE, 0, x * CELL_SIZE, WINDOW_H, rl.LIGHTGRAY)
+            rl.draw_line(x * CELL_SIZE, 0, x * CELL_SIZE, WINDOW_H, GRID_LINE_COLOR)
         for y in range(GRID_HEIGHT + 1):
-            rl.draw_line(0, y * CELL_SIZE, WINDOW_W, y * CELL_SIZE, rl.LIGHTGRAY)
+            rl.draw_line(0, y * CELL_SIZE, WINDOW_W, y * CELL_SIZE, GRID_LINE_COLOR)
 
         # obstacles
         omask = (world.state.component_stores["GridObstacle"].alive_mask &
@@ -117,7 +131,7 @@ def main():
             opos = world.state.component_stores["GridPosition"].read(oidx)
             for i in range(int(oidx.size)):
                 x, y = int(opos[i, 0]), int(opos[i, 1])
-                rl.draw_rectangle(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE, rl.GRAY)
+                rl.draw_rectangle(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE, OBSTACLE_COLOR)
 
         # goals
         gmask = (world.state.component_stores["GridGoal"].alive_mask &
@@ -128,9 +142,11 @@ def main():
             gpos = world.state.component_stores["GridPosition"].read(gidx)
             for i in range(int(gidx.size)):
                 x, y = int(gpos[i, 0]), int(gpos[i, 1])
-                margin = CELL_SIZE // 6
-                rl.draw_rectangle(x * CELL_SIZE + margin, y * CELL_SIZE + margin,
-                                  CELL_SIZE - 2 * margin, CELL_SIZE - 2 * margin, rl.GREEN)
+                cx = x * CELL_SIZE + CELL_SIZE // 2
+                cy = y * CELL_SIZE + CELL_SIZE // 2
+                radius = CELL_SIZE // 3
+                rl.draw_circle(cx, cy, radius, GOAL_COLOR)
+                rl.draw_circle_lines(cx, cy, radius, rl.BLACK)
 
         # agents
         amask = (world.state.component_stores["DiscreteAction"].alive_mask &
@@ -141,8 +157,11 @@ def main():
             apos = world.state.component_stores["GridPosition"].read(aidx)
             for i in range(int(aidx.size)):
                 x, y = int(apos[i, 0]), int(apos[i, 1])
-                rl.draw_circle(x * CELL_SIZE + CELL_SIZE // 2, y * CELL_SIZE + CELL_SIZE // 2,
-                               CELL_SIZE * 0.35, rl.SKYBLUE)
+                cx = x * CELL_SIZE + CELL_SIZE // 2
+                cy = y * CELL_SIZE + CELL_SIZE // 2
+                radius = int(CELL_SIZE * 0.35)
+                rl.draw_circle(cx, cy, radius, AGENT_COLOR)
+                rl.draw_circle_lines(cx, cy, radius, rl.BLACK)
 
         rl.end_drawing()
 
