@@ -1,4 +1,4 @@
-from .observation import observation_system
+from .observation import observation_system, grid_observation_system
 from .action import discrete_action_system, continuous_action_system
 from .reward import (
     distance_reward_system,
