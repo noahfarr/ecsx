@@ -43,7 +43,7 @@ class GridRenderer:
 
         colors = pr.load_image_colors(img)
         buf = pr.ffi.buffer(colors, width * height * 4)
-        arr = np.frombuffer(buf, dtype=np.uint8).reshape((height, width, 4))
+        arr = np.frombuffer(buf, dtype=np.uint8).reshape((height, width, 4)).copy()
         pr.unload_image_colors(colors)
         pr.unload_image(img)
         return arr

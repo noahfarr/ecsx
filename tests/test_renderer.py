@@ -17,3 +17,14 @@ def test_renderer_output():
     assert np.any((img == blue).all(axis=-1))
     assert np.any((img == gray).all(axis=-1))
     assert np.any((img == green).all(axis=-1))
+
+
+def test_renderer_returns_owned_array():
+    env = build_grid_world(
+        num_agents=1, grid_size=(3, 3), obstacle_positions=[(1, 1)], goal_position=(2, 2)
+    )
+    renderer = GridRenderer(grid_size=(3, 3), cell_size=1)
+    env.reset()
+    img = renderer.render(env.world, goal_position=(2, 2))
+    # The renderer should return an array that owns its memory so it remains valid
+    assert img.base is None
