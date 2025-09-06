@@ -4,7 +4,9 @@ from typing import Callable, Mapping, Protocol, Tuple, TYPE_CHECKING
 import jax
 
 from .typing import Array, Key
-from .world import WorldState
+
+if TYPE_CHECKING:  # pragma: no cover
+    from .world import WorldState
 
 
 class SystemFn(Protocol):
@@ -15,11 +17,11 @@ class SystemFn(Protocol):
     """
 
     def __call__(
-        self, world: WorldState, key: Key, inputs: Mapping[str, Array]
-    ) -> WorldState: ...
+        self, world: "WorldState", key: Key, inputs: Mapping[str, Array]
+    ) -> "WorldState": ...
 
 
-def set_random_key(world: WorldState, key: Key) -> WorldState:
+def set_random_key(world: "WorldState", key: Key) -> "WorldState":
     """Return ``world`` with its random key replaced by ``key``."""
 
     return replace(world, random_key=key)
@@ -27,14 +29,14 @@ def set_random_key(world: WorldState, key: Key) -> WorldState:
 
 def build_step(
     systems: Tuple[SystemFn, ...]
-) -> Callable[[WorldState, Mapping[str, Array]], WorldState]:
+) -> Callable[["WorldState", Mapping[str, Array]], "WorldState"]:
     """Compose a sequence of systems into a single step function.
 
     Each step resets per-frame event buffers, deterministically splits the
     world's PRNG key for each system, and increments the global ``time_step``.
     """
 
-    def step(world: WorldState, inputs: Mapping[str, Array]) -> WorldState:
+    def step(world: "WorldState", inputs: Mapping[str, Array]) -> "WorldState":
         world = world.reset_event_buffers()
         key = world.random_key
         for sys in systems:
