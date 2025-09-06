@@ -26,12 +26,28 @@ def test_observation_specification():
     assert jnp.array_equal(spec.default, jnp.array([0.0, 0.0], jnp.float32))
 
 
-def test_action_specification():
-    spec = get_action_specification()
-    assert spec.name == "Action"
+def test_continuous_action_specification():
+    spec = get_continuous_action_specification()
+    assert spec.name == "ContinuousAction"
     assert spec.shape == (2,)
     assert spec.dtype == jnp.float32
     assert jnp.array_equal(spec.default, jnp.array([0.0, 0.0], jnp.float32))
+
+
+def test_discrete_action_specification():
+    spec = get_discrete_action_specification()
+    assert spec.name == "DiscreteAction"
+    assert spec.shape == ()
+    assert spec.dtype == jnp.int32
+    assert jnp.array_equal(spec.default, jnp.array(0, jnp.int32))
+
+
+def test_obstacle_specification():
+    spec = get_obstacle_specification()
+    assert spec.name == "Obstacle"
+    assert spec.shape == ()
+    assert spec.dtype == jnp.bool_
+    assert jnp.array_equal(spec.default, jnp.array(False, jnp.bool_))
 
 
 def test_reward_specification():
