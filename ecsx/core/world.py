@@ -1,6 +1,7 @@
 from dataclasses import dataclass, replace
 from typing import Callable, Mapping, Optional
 
+import jax
 import jax.numpy as jnp
 from jax import tree_util
 
@@ -10,6 +11,7 @@ from ecsx.core.component_store import ComponentStore
 from ecsx.core.entity_registry import EntityRegistry
 from ecsx.core.event_specification import EventSpecification
 from ecsx.core.event_buffer import EventBuffer
+from ecsx.core.system import SystemFn, build_step
 
 
 @tree_util.register_pytree_node_class
@@ -41,7 +43,6 @@ class WorldState:
         new_stores[spec.name] = store
         return replace(self, component_stores=new_stores)
 
-    
     def add_component_to_entity(
         self, name: ComponentName, entity_id: EntityId, value: Array
     ) -> "WorldState":
@@ -68,16 +69,20 @@ class WorldState:
         if specification.name in self.event_buffers:
             raise ValueError(f"Event already registered: {specification.name}")
         buf = EventBuffer.from_specification(specification)
-        new_bufs = dict(self.event_buffers); new_bufs[specification.name] = buf
+        new_bufs = dict(self.event_buffers)
+        new_bufs[specification.name] = buf
         return replace(self, event_buffers=new_bufs)
 
     def reset_event_buffers(self) -> "WorldState":
         new_bufs = {k: v.clear() for k, v in self.event_buffers.items()}
         return replace(self, event_buffers=new_bufs)
 
-    def write_event_buffer(self, name: str, payloads: jnp.ndarray, count: jnp.ndarray) -> "WorldState":
+    def write_event_buffer(
+        self, name: str, payloads: jnp.ndarray, count: jnp.ndarray
+    ) -> "WorldState":
         buf = self.event_buffers[name].overwrite(payloads, count)
-        new_bufs = dict(self.event_buffers); new_bufs[name] = buf
+        new_bufs = dict(self.event_buffers)
+        new_bufs[name] = buf
         return replace(self, event_buffers=new_bufs)
 
     def with_alive_mask(self, alive_mask: Array) -> "WorldState":
@@ -96,14 +101,17 @@ class WorldState:
             self.alive_mask,
             self.random_key,
             self.time_step,
+            self.event_buffers,
         )
         aux = self.capacity
         return children, aux
 
     @classmethod
     def tree_unflatten(cls, aux, children):
-        component_stores, alive_mask, random_key, time_step = children
-        return cls(component_stores, alive_mask, random_key, time_step, aux)
+        component_stores, alive_mask, random_key, time_step, event_buffers = children
+        return cls(
+            component_stores, alive_mask, random_key, time_step, event_buffers, aux
+        )
 
     def _get_store(self, name: ComponentName) -> ComponentStore:
         try:
@@ -129,13 +137,14 @@ class World:
         # sync alive mask initially
         self._world = self._world.with_alive_mask(self._registry.alive_mask)
         self._systems: tuple[SystemFn, ...] = tuple()
-        self._compiled_step: Optional[Callable[[WorldState, Mapping[str, Array]], WorldState]] = None
 
     def register_component(self, specification: ComponentSpecification) -> "World":
         self._world = self._world.register_component(specification)
         return self
 
-    def attach_component(self, entity_id: EntityId, name: ComponentName, value: Array) -> "World":
+    def attach_component(
+        self, entity_id: EntityId, name: ComponentName, value: Array
+    ) -> "World":
         if not bool(self._world.alive_mask[entity_id]):
             raise RuntimeError(f"Entity {entity_id} is not alive; spawn first.")
         self._world = self._world.add_component_to_entity(name, entity_id, value)
@@ -143,6 +152,14 @@ class World:
 
     def detach_component(self, entity_id: EntityId, name: ComponentName) -> "World":
         self._world = self._world.remove_component_from_entity(name, entity_id)
+        return self
+
+    def register_event_buffer(self, specification: EventSpecification) -> "World":
+        self._world = self._world.register_event_buffer(specification)
+        return self
+
+    def add_systems(self, *systems: SystemFn) -> "World":
+        self._systems = tuple([*self._systems, *systems])
         return self
 
     def spawn(self, **components: Array) -> EntityId:
@@ -158,12 +175,23 @@ class World:
             # Clear all component rows for this entity
             for name, store in self._world.component_stores.items():
                 if bool(store.alive_mask[entity_id]):
-                    self._world = self._world.remove_component_from_entity(name, entity_id)
+                    self._world = self._world.remove_component_from_entity(
+                        name, entity_id
+                    )
         self._registry.despawn(entity_id)
         self._world = self._world.with_alive_mask(self._registry.alive_mask)
         return self
 
+    def build_step(self) -> Callable[[WorldState, Mapping[str, Array]], WorldState]:
+        return build_step(self._systems)
 
+    def step(self, inputs: Mapping[str, Array] | None = None) -> "World":
+        """Run one step over systems; updates internal WorldState."""
+        if inputs is None:
+            inputs = {}
+        step_fn = self.build_step()
+        self._world = step_fn(self._world, inputs)
+        return self
 
     @property
     def state(self) -> WorldState:

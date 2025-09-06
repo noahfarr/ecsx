@@ -6,5 +6,3 @@ Array: TypeAlias = jax.Array
 ComponentName: TypeAlias = str
 EntityId: TypeAlias = int
 PyTree: TypeAlias = Any
-
-
