@@ -22,12 +22,16 @@ class GridRenderer:
         self.grid_size = grid_size
         self.cell_size = cell_size
 
-        asset_dir = Path(__file__).with_suffix("").parent / "assets"
-        self.agent_img = pr.load_image(agent_sprite or str(asset_dir / "agent.png"))
-        self.obstacle_img = pr.load_image(
-            obstacle_sprite or str(asset_dir / "obstacle.png")
+        asset_dir = (
+            Path(__file__).resolve().parents[2] / "assets" / "Tiles"
         )
-        goal_path = goal_sprite or str(asset_dir / "goal.png")
+        self.agent_img = pr.load_image(
+            agent_sprite or str(asset_dir / "tile_0029.png")
+        )
+        self.obstacle_img = pr.load_image(
+            obstacle_sprite or str(asset_dir / "tile_0006.png")
+        )
+        goal_path = goal_sprite or str(asset_dir / "tile_0044.png")
         self.goal_img = pr.load_image(goal_path) if Path(goal_path).exists() else None
 
     def render(

@@ -20,12 +20,12 @@ def test_renderer_output():
         cy = cell[1] * 16 + 8
         return img[cy, cx]
 
-    blue = np.array([0, 121, 241, 255], np.uint8)
-    gray = np.array([130, 130, 130, 255], np.uint8)
-    yellow = np.array([253, 249, 0, 255], np.uint8)
-    assert (center_pixel((0, 0)) == blue).all()
-    assert (center_pixel((1, 1)) == gray).all()
-    assert (center_pixel((2, 2)) == yellow).all()
+    agent_px = np.array([232, 69, 55, 255], np.uint8)
+    obstacle_px = np.array([192, 203, 220, 255], np.uint8)
+    goal_px = np.array([234, 165, 108, 255], np.uint8)
+    assert (center_pixel((0, 0)) == agent_px).all()
+    assert (center_pixel((1, 1)) == obstacle_px).all()
+    assert (center_pixel((2, 2)) == goal_px).all()
 
 
 def test_renderer_returns_owned_array():
