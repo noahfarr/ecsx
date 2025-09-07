@@ -12,5 +12,7 @@ def test_goal_and_background_texture_usage():
     texture_ids = rend_store.read(idx).reshape(-1)
     goal_idx = jnp.where(jnp.all(positions == jnp.array(goal), axis=1))[0]
     assert goal_idx.size == 1
-    assert int(texture_ids[int(goal_idx[0])]) == 2
+    # Goal should use the second texture slot
+    assert int(texture_ids[int(goal_idx[0])]) == 1
+    # Background remains the floor texture
     assert int(env.default_inputs["background_id"]) == 3
