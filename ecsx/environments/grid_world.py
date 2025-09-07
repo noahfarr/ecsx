@@ -35,9 +35,7 @@ def _generate_obstacles(
 ) -> Sequence[Tuple[int, int]]:
     """Sample obstacle positions avoiding agents and optional goal."""
 
-    all_positions = [
-        (x, y) for x in range(grid_size[0]) for y in range(grid_size[1])
-    ]
+    all_positions = [(x, y) for x in range(grid_size[0]) for y in range(grid_size[1])]
     occupied = {(0, i) for i in range(num_agents)}
     if goal_position is not None:
         occupied.add(goal_position)
@@ -91,7 +89,9 @@ def build_grid_world(
         obs_dtype = jnp.int32
 
     world.register_component(get_position_specification())
-    world.register_component(get_observation_specification(shape=obs_shape, dtype=obs_dtype))
+    world.register_component(
+        get_observation_specification(shape=obs_shape, dtype=obs_dtype)
+    )
     world.register_component(get_discrete_action_specification())
     world.register_component(get_reward_specification())
     world.register_component(get_termination_specification())
@@ -106,9 +106,14 @@ def build_grid_world(
     )
     world._world = world.state.register_event_buffer(frame_spec)
 
-    asset_dir = Path(__file__).resolve().parents[2] / "assets" / "Tiles"
+    asset_dir = Path(__file__).resolve().parents[2] / "assets"
     textures = load_textures(
-        [asset_dir / "tile_0000.png", asset_dir / "tile_0001.png"]
+        [
+            asset_dir / "agent.png",
+            asset_dir / "obstacle.png",
+            asset_dir / "goal.png",
+            asset_dir / "floor.png",
+        ]
     )
 
     agent_ids = []

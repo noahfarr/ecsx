@@ -52,9 +52,7 @@ def render_grid(
         x = int(pos[0]) * cell_size
         y = int(pos[1]) * cell_size
         tex = textures[int(tid)]
-        src = ffi.new(
-            "Rectangle*", (0.0, 0.0, float(tex.width), float(tex.height))
-        )[0]
+        src = ffi.new("Rectangle*", (0.0, 0.0, float(tex.width), float(tex.height)))[0]
         dst = ffi.new(
             "Rectangle*", (float(x), float(y), float(cell_size), float(cell_size))
         )[0]
