@@ -78,7 +78,9 @@ def build_grid_world(
         obstacle_positions = _generate_obstacles(
             obst_key, num_obstacles, grid_size, num_agents, goal_position
         )
-    capacity = num_agents + (len(obstacle_positions) if obstacle_positions else 0)
+    capacity = num_agents + (
+        len(obstacle_positions) if obstacle_positions else 0
+    ) + (1 if goal_position is not None else 0)
     world = World(capacity=capacity, key=rng)
 
     if view_radius is None:
@@ -133,6 +135,12 @@ def build_grid_world(
                 Renderable=jnp.array(1, jnp.int32),
             )
 
+    if goal_position is not None:
+        world.spawn(
+            Position=jnp.array(goal_position, jnp.float32),
+            Renderable=jnp.array(2, jnp.int32),
+        )
+
     systems = [discrete_action_system]
     if view_radius is None:
         systems.append(observation_system)
@@ -148,6 +156,7 @@ def build_grid_world(
     default_inputs = {
         "grid_size": jnp.array(grid_size, jnp.int32),
         "textures": textures,
+        "background_id": jnp.array(3, jnp.int32),
     }
     if goal_position is not None:
         default_inputs["goal_position"] = jnp.array(goal_position, jnp.int32)
