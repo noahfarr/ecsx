@@ -97,4 +97,3 @@ class Environment:
         done = done[0] if idx.size == 1 else done
         ts = TimeStep(obs, rew, done, {})
         return state, ts
-
