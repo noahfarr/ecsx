@@ -109,10 +109,10 @@ class GridRenderer:
     def render(self, world, **inputs) -> np.ndarray:
         textures = inputs.get("textures", self.textures)
         background_id = inputs.get("background_id", self.background_id)
-        pos_store = world.get_store("Position")
-        rend_store = world.get_store("Renderable")
+        pos_store = world._get_store("Position")
+        rend_store = world._get_store("Renderable")
         mask = (
-            np.array(world.state.alive_mask)
+            np.array(world.alive_mask)
             & np.array(pos_store.alive_mask)
             & np.array(rend_store.alive_mask)
         )

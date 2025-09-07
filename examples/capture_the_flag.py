@@ -29,7 +29,7 @@ def main():
         key, subkey = jax.random.split(key)
         state, ts = env.step(subkey, state, action)
         print("Observation", ts.observation)
-        frame = renderer.render(env.world)
+        frame = renderer.render(state.world)
         plt.imshow(frame)
         plt.title(f"step {step}")
         plt.show()
