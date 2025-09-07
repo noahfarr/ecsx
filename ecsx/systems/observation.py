@@ -5,19 +5,29 @@ from ecsx.core.typing import Array, Key
 from ecsx.core.world import WorldState
 
 
-def _alive_indices(world: WorldState) -> jnp.ndarray:
-    return jnp.where(world.alive_mask)[0].astype(jnp.int32)
+def _entity_indices(world: WorldState) -> jnp.ndarray:
+    """Return indices for all entities.
+
+    Similar to ``systems.action``, using ``jnp.where`` with ``alive_mask`` leads
+    to arrays with data-dependent shapes that break under ``jax.jit``.  We
+    instead operate on the full static index range and mask out inactive
+    entities downstream.
+    """
+
+    return jnp.arange(world.alive_mask.shape[0], dtype=jnp.int32)
 
 
 def observation_system(
     world: WorldState, key: Key, inputs: Mapping[str, Array]
 ) -> WorldState:
-    idx = _alive_indices(world)
-    if idx.size == 0:
-        return world
+    idx = _entity_indices(world)
+    alive = world.alive_mask.astype(bool)
     pos_store = world._get_store("Position")
     obs_store = world._get_store("Observation")
-    obs_store = obs_store.write(idx, pos_store.read(idx))
+    pos = pos_store.read(idx)
+    obs = obs_store.read(idx)
+    obs = jnp.where(alive[:, None], pos, obs)
+    obs_store = obs_store.write(idx, obs)
     return world._with_store("Observation", obs_store)
 
 

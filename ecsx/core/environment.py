@@ -1,7 +1,7 @@
-from dataclasses import dataclass
 from typing import Mapping, Sequence, Tuple
 
 import jax.numpy as jnp
+from flax.struct import dataclass
 
 from ecsx.core.system import SystemFn, set_random_key
 from ecsx.core.typing import Array, Key
