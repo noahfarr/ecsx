@@ -6,16 +6,6 @@ from ecsx.core.world import WorldState
 from ecsx.rendering import render_grid
 
 
-def _alive_indices(world: WorldState) -> jnp.ndarray:
-    try:
-        pos_store = world._get_store("Position")
-        rend_store = world._get_store("Renderable")
-    except KeyError:
-        return jnp.array([], jnp.int32)
-    mask = world.alive_mask & pos_store.alive_mask & rend_store.alive_mask
-    return jnp.where(mask)[0].astype(jnp.int32)
-
-
 def render_system(world: WorldState, key: Key, inputs: Mapping[str, Array]) -> WorldState:
     """Produce a rendered image of the current world state.
 
@@ -33,15 +23,14 @@ def render_system(world: WorldState, key: Key, inputs: Mapping[str, Array]) -> W
     cell_size = int(inputs.get("cell_size", 1))
     background_id = inputs.get("background_id")
 
-    idx = _alive_indices(world)
-    if idx.size > 0:
-        pos_store = world._get_store("Position")
-        rend_store = world._get_store("Renderable")
-        positions = np.array(pos_store.read(idx))
-        texture_ids = np.array(rend_store.read(idx)).reshape(-1)
-    else:
-        positions = np.zeros((0, 2))
-        texture_ids = np.zeros((0,), dtype=np.int32)
+    pos_store = world._get_store("Position")
+    rend_store = world._get_store("Renderable")
+    idx = jnp.arange(world.alive_mask.shape[0], dtype=jnp.int32)
+    mask = np.array(
+        world.alive_mask & pos_store.alive_mask & rend_store.alive_mask
+    )
+    positions = np.array(pos_store.read(idx))[mask]
+    texture_ids = np.array(rend_store.read(idx).reshape(-1))[mask]
 
     image = render_grid(
         positions,

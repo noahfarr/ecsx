@@ -30,6 +30,7 @@ def build_capture_the_flag(
     team_size: int = 1,
     map_size: Tuple[int, int] = (10, 10),
     key: jax.Array | None = None,
+    render: bool = False,
 ) -> Environment:
     """Build a simple two-team capture-the-flag environment."""
 
@@ -47,19 +48,21 @@ def build_capture_the_flag(
     world.register_component(get_flag_specification())
     world.register_component(get_renderable_specification())
 
-    frame_spec = EventSpecification(
-        "Frame", (map_size[1], map_size[0], 4), jnp.uint8, 1
-    )
-    world._world = world.state.register_event_buffer(frame_spec)
-
-    asset_dir = Path(__file__).resolve().parents[2] / "assets"
-    textures = load_textures(
-        [
-            asset_dir / "agent.png",
-            asset_dir / "goal.png",
-            asset_dir / "floor.png",
-        ]
-    )
+    if render:
+        frame_spec = EventSpecification(
+            "Frame", (map_size[1], map_size[0], 4), jnp.uint8, 1
+        )
+        world._world = world.state.register_event_buffer(frame_spec)
+        asset_dir = Path(__file__).resolve().parents[2] / "assets"
+        textures = load_textures(
+            [
+                asset_dir / "agent.png",
+                asset_dir / "goal.png",
+                asset_dir / "floor.png",
+            ]
+        )
+    else:
+        textures = jnp.empty((0,))
 
     base_positions = jnp.array([[0, 0], [map_size[0] - 1, map_size[1] - 1]], jnp.int32)
 
@@ -98,15 +101,18 @@ def build_capture_the_flag(
         observation_system,
         flag_capture_system,
         termination_system,
-        render_system,
     ]
+    if render:
+        systems.append(render_system)
 
     default_inputs = {
         "grid_size": jnp.array(map_size, jnp.int32),
         "base_positions": base_positions,
-        "textures": textures,
-        "background_id": jnp.array(2, jnp.int32),
     }
+    if render:
+        default_inputs.update(
+            {"textures": textures, "background_id": jnp.array(2, jnp.int32)}
+        )
 
     env = Environment(
         world,
