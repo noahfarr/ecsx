@@ -21,7 +21,7 @@ def render_system(world: WorldState, key: Key, inputs: Mapping[str, Array]) -> W
 
     The resulting image is written to the ``Frame`` event buffer if it exists.
     ``inputs`` must contain ``grid_size`` and ``textures`` and may optionally
-    specify ``cell_size``.
+    specify ``cell_size`` and ``background_id``.
     """
     if "Frame" not in world.event_buffers:
         return world
@@ -31,6 +31,7 @@ def render_system(world: WorldState, key: Key, inputs: Mapping[str, Array]) -> W
         return world
     grid_size = tuple(int(x) for x in np.array(grid_size))
     cell_size = int(inputs.get("cell_size", 1))
+    background_id = inputs.get("background_id")
 
     idx = _alive_indices(world)
     if idx.size > 0:
@@ -42,7 +43,14 @@ def render_system(world: WorldState, key: Key, inputs: Mapping[str, Array]) -> W
         positions = np.zeros((0, 2))
         texture_ids = np.zeros((0,), dtype=np.int32)
 
-    image = render_grid(positions, texture_ids, textures, grid_size, cell_size)
+    image = render_grid(
+        positions,
+        texture_ids,
+        textures,
+        grid_size,
+        cell_size,
+        background_id,
+    )
     frame = jnp.asarray(image)
     payloads = jnp.zeros((1, *frame.shape), dtype=jnp.uint8)
     payloads = payloads.at[0].set(frame)

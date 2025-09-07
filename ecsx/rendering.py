@@ -28,6 +28,7 @@ def render_grid(
     textures: Sequence,
     grid_size: tuple[int, int],
     cell_size: int = 1,
+    background_id: int | None = None,
 ) -> np.ndarray:
     """Render entities into an RGBA image array.
 
@@ -43,11 +44,36 @@ def render_grid(
         ``(width, height)`` of the grid.
     cell_size:
         Size of a single grid cell in pixels.  Textures are scaled to this size.
+    background_id:
+        Optional index into ``textures`` used to tile the background. If
+        provided, the corresponding image will be drawn into every grid cell
+        before rendering entities.
     """
     width = int(grid_size[0]) * cell_size
     height = int(grid_size[1]) * cell_size
     img = raylib.GenImageColor(width, height, raylib.GetColor(0x000000FF))
     img_ptr = ffi.new("Image *", img)
+
+    # Draw background texture on every tile if provided.
+    if background_id is not None:
+        bg = textures[int(background_id)]
+        src_bg = ffi.new(
+            "Rectangle*", (0.0, 0.0, float(bg.width), float(bg.height))
+        )[0]
+        for gx in range(int(grid_size[0])):
+            for gy in range(int(grid_size[1])):
+                dst_bg = ffi.new(
+                    "Rectangle*",
+                    (
+                        float(gx * cell_size),
+                        float(gy * cell_size),
+                        float(cell_size),
+                        float(cell_size),
+                    ),
+                )[0]
+                raylib.ImageDraw(
+                    img_ptr, bg, src_bg, dst_bg, raylib.GetColor(0xFFFFFFFF)
+                )
     for pos, tid in zip(positions, texture_ids):
         x = int(pos[0]) * cell_size
         y = int(pos[1]) * cell_size
@@ -75,13 +101,16 @@ class GridRenderer:
         grid_size: tuple[int, int],
         cell_size: int = 1,
         textures: Sequence | None = None,
+        background_id: int | None = None,
     ) -> None:
         self.grid_size = grid_size
         self.cell_size = cell_size
         self.textures = textures or []
+        self.background_id = background_id
 
     def render(self, world, **inputs) -> np.ndarray:
         textures = inputs.get("textures", self.textures)
+        background_id = inputs.get("background_id", self.background_id)
         pos_store = world.get_store("Position")
         rend_store = world.get_store("Renderable")
         mask = (
@@ -97,5 +126,10 @@ class GridRenderer:
         positions = np.array(pos_store.read(idx))
         texture_ids = np.array(rend_store.read(idx)).reshape(-1)
         return render_grid(
-            positions, texture_ids, textures, self.grid_size, self.cell_size
+            positions,
+            texture_ids,
+            textures,
+            self.grid_size,
+            self.cell_size,
+            background_id,
         )

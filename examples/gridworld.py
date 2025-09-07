@@ -16,7 +16,9 @@ def main():
         goal_position=goal,
     )
     renderer = GridRenderer(
-        grid_size=grid_size, textures=env.default_inputs["textures"]
+        grid_size=grid_size,
+        textures=env.default_inputs["textures"],
+        background_id=int(env.default_inputs["background_id"]),
     )
 
     obs = env.reset()
