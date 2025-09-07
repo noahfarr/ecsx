@@ -36,16 +36,16 @@ def flag_capture_system(
     if jnp.any(can_capture):
         free_flags = jnp.where(can_capture)[0]
         fpos = flag_pos[free_flags]
-        capture_mat = jnp.all(
-            agent_pos[:, None, :] == fpos[None, :, :], axis=-1
-        )
+        capture_mat = jnp.all(agent_pos[:, None, :] == fpos[None, :, :], axis=-1)
         enemy = agent_team[:, None] != owner[free_flags][None, :]
         capture_mat = jnp.logical_and(capture_mat, enemy)
         any_capture = jnp.any(capture_mat, axis=0)
         captor_idx = jnp.argmax(capture_mat, axis=0)
         carrier_entity = agent_idx[captor_idx]
         new_carried = jnp.where(any_capture, True, carried[free_flags])
-        new_carrier_ids = jnp.where(any_capture, carrier_entity, carrier_ids[free_flags])
+        new_carrier_ids = jnp.where(
+            any_capture, carrier_entity, carrier_ids[free_flags]
+        )
         carried = carried.at[free_flags].set(new_carried)
         carrier_ids = carrier_ids.at[free_flags].set(new_carrier_ids)
 
@@ -76,13 +76,10 @@ def flag_capture_system(
 
     flag_store = flag_store.write(
         flag_idx,
-        jnp.stack(
-            [owner, carried.astype(jnp.int32), carrier_ids], axis=1
-        ),
+        jnp.stack([owner, carried.astype(jnp.int32), carrier_ids], axis=1),
     )
     pos_store = pos_store.write(flag_idx, flag_pos)
     world = world._with_store("Flag", flag_store)
     world = world._with_store("Position", pos_store)
     world = world._with_store("Reward", rew_store)
     return world
-

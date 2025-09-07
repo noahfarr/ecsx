@@ -57,9 +57,7 @@ def render_grid(
     # Draw background texture on every tile if provided.
     if background_id is not None:
         bg = textures[int(background_id)]
-        src_bg = ffi.new(
-            "Rectangle*", (0.0, 0.0, float(bg.width), float(bg.height))
-        )[0]
+        src_bg = ffi.new("Rectangle*", (0.0, 0.0, float(bg.width), float(bg.height)))[0]
         for gx in range(int(grid_size[0])):
             for gy in range(int(grid_size[1])):
                 dst_bg = ffi.new(

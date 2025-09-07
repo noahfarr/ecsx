@@ -28,7 +28,7 @@ def main():
     for step, action in enumerate(action_sequence, start=1):
         key, subkey = jax.random.split(key)
         state, ts = env.step(subkey, state, action)
-        frame = renderer.render(state.world)
+        frame = renderer.render(env.world)
         plt.imshow(frame)
         plt.title(f"step {step}")
         plt.show()

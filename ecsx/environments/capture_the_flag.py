@@ -61,9 +61,7 @@ def build_capture_the_flag(
         ]
     )
 
-    base_positions = jnp.array(
-        [[0, 0], [map_size[0] - 1, map_size[1] - 1]], jnp.int32
-    )
+    base_positions = jnp.array([[0, 0], [map_size[0] - 1, map_size[1] - 1]], jnp.int32)
 
     agent_ids = []
     for i in range(team_size):
@@ -118,4 +116,3 @@ def build_capture_the_flag(
         default_inputs=default_inputs,
     )
     return env
-
