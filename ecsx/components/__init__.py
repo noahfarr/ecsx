@@ -7,3 +7,5 @@ from .obstacle import get_obstacle_specification
 from .reward import get_reward_specification
 from .termination import get_termination_specification
 from .renderable import get_renderable_specification
+from .team import get_team_specification
+from .flag import get_flag_specification

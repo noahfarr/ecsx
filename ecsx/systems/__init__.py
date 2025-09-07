@@ -7,3 +7,4 @@ from .reward import (
 )
 from .termination import termination_system
 from .rendering import render_system
+from .capture import flag_capture_system

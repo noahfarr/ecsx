@@ -35,9 +35,9 @@ def test_environment_step_and_reset():
         ),
         action_component="DiscreteAction",
     )
-    obs = env.reset()
-    assert jnp.array_equal(obs, jnp.array([0.0, 0.0], jnp.float32))
-    obs, rew, done, _ = env.step(jnp.array(4, jnp.int32))
-    assert jnp.array_equal(obs, jnp.array([1.0, 0.0], jnp.float32))
-    assert rew == -jnp.linalg.norm(jnp.array([1.0, 0.0], jnp.float32))
-    assert done is False
+    state, ts = env.reset(jax.random.PRNGKey(1))
+    assert jnp.array_equal(ts.observation, jnp.array([0.0, 0.0], jnp.float32))
+    state, ts = env.step(jax.random.PRNGKey(2), state, jnp.array(4, jnp.int32))
+    assert jnp.array_equal(ts.observation, jnp.array([1.0, 0.0], jnp.float32))
+    assert ts.reward == -jnp.linalg.norm(jnp.array([1.0, 0.0], jnp.float32))
+    assert bool(ts.done) is False
