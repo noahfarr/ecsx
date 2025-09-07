@@ -112,8 +112,8 @@ def build_grid_world(
     textures = load_textures(
         [
             asset_dir / "agent.png",
-            asset_dir / "obstacle.png",
             asset_dir / "goal.png",
+            asset_dir / "obstacle.png",
             asset_dir / "floor.png",
         ]
     )
@@ -132,13 +132,13 @@ def build_grid_world(
             world.spawn(
                 Position=jnp.array(pos, jnp.float32),
                 Obstacle=jnp.array(True),
-                Renderable=jnp.array(1, jnp.int32),
+                Renderable=jnp.array(2, jnp.int32),
             )
 
     if goal_position is not None:
         world.spawn(
             Position=jnp.array(goal_position, jnp.float32),
-            Renderable=jnp.array(2, jnp.int32),
+            Renderable=jnp.array(1, jnp.int32),
         )
 
     systems = [discrete_action_system]
