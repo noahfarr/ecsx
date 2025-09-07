@@ -6,3 +6,4 @@ from .reward import (
     step_penalty_reward_system,
 )
 from .termination import termination_system
+from .rendering import render_system

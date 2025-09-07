@@ -64,3 +64,11 @@ def test_termination_specification():
     assert spec.shape == ()
     assert spec.dtype == jnp.bool_
     assert jnp.array_equal(spec.default, jnp.array(False, jnp.bool_))
+
+
+def test_renderable_specification():
+    spec = get_renderable_specification()
+    assert spec.name == "Renderable"
+    assert spec.shape == ()
+    assert spec.dtype == jnp.int32
+    assert jnp.array_equal(spec.default, jnp.array(0, jnp.int32))

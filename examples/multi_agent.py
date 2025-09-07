@@ -4,8 +4,8 @@ from ecsx.rendering import GridRenderer
 
 
 def main():
-    env = build_grid_world(num_agents=2, grid_size=(5, 5))
-    renderer = GridRenderer(grid_size=(5, 5))
+    env = build_grid_world(num_agents=2, grid_size=(5, 5), num_obstacles=3)
+    renderer = GridRenderer(grid_size=(5, 5), textures=env.default_inputs["textures"])
     obs = env.reset()
     actions = jnp.array([4, 1], jnp.int32)
     obs, rew, done, _ = env.step(actions)

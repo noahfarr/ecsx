@@ -4,8 +4,10 @@ from ecsx.rendering import GridRenderer
 
 
 def main():
-    env = build_grid_world(num_agents=1, grid_size=(5, 5), goal_position=(4, 4))
-    renderer = GridRenderer(grid_size=(5, 5))
+    env = build_grid_world(
+        num_agents=1, grid_size=(5, 5), num_obstacles=2, goal_position=(4, 4)
+    )
+    renderer = GridRenderer(grid_size=(5, 5), textures=env.default_inputs["textures"])
     obs = env.reset()
     done = False
     while not done:
