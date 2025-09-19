@@ -7,3 +7,6 @@ from .flag import Flag
 from .renderable import Renderable
 from .obstacle import Obstacle
 from .goal import Goal
+from .continuous_action import ContinuousAction
+from .discrete_action import DiscreteAction
+from .multi_discrete_action import MultiDiscreteAction

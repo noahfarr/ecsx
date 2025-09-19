@@ -15,4 +15,6 @@ class DiscreteAction:
 
     @classmethod
     def tree_unflatten(cls, aux, children):
-        return cls(*children, dtype=aux["dtype"])
+        value, n, dtype = children
+        dtype = aux.get("dtype", dtype)
+        return cls(value, n, dtype=dtype)
