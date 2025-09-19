@@ -1,11 +1,17 @@
+from dataclasses import dataclass
 import jax.numpy as jnp
-from ecsx.core.component_specification import ComponentSpecification
+from jax import tree_util as jtu
 
 
-def get_team_specification() -> ComponentSpecification:
-    """Component storing an entity's team affiliation."""
+@jtu.register_pytree_node_class
+@dataclass(frozen=True)
+class Team:
+    id: jnp.ndarray
 
-    return ComponentSpecification(
-        "Team", (), jnp.int32, jnp.array(0, jnp.int32)
-    )
+    def tree_flatten(self):
+        return (self.id,), None
 
+    @classmethod
+    def tree_unflatten(cls, aux, children):
+        id = children
+        return cls(id)

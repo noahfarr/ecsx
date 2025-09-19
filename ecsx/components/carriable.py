@@ -1,16 +1,16 @@
 from dataclasses import dataclass
+import jax.numpy as jnp
 from jax import tree_util as jtu
-
-from ecsx.components import Position
 
 
 @jtu.register_pytree_node_class
 @dataclass(frozen=True)
-class Obstacle:
-    position: Position
+class Carriable:
+    eid: jnp.ndarray
+    carried: jnp.ndarray
 
     def tree_flatten(self):
-        return (self.position,), None
+        return (self.eid, self.carried), None
 
     @classmethod
     def tree_unflatten(cls, aux, children):

@@ -1,6 +1,17 @@
+from dataclasses import dataclass
 import jax.numpy as jnp
-from ecsx.core.component_specification import ComponentSpecification
+from jax import tree_util as jtu
 
-def get_velocity_specification() -> ComponentSpecification:
-    return ComponentSpecification("Velocity", (2,), jnp.float32, jnp.array([0.0, 0.0], jnp.float32))
 
+@jtu.register_pytree_node_class
+@dataclass(frozen=True)
+class Velocity:
+    vx: jnp.ndarray
+    vy: jnp.ndarray
+
+    def tree_flatten(self):
+        return (self.vx, self.vy), None
+
+    @classmethod
+    def tree_unflatten(cls, aux, children):
+        return cls(*children)

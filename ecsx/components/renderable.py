@@ -1,17 +1,16 @@
+from dataclasses import dataclass
 import jax.numpy as jnp
-from ecsx.core.component_specification import ComponentSpecification
+from jax import tree_util as jtu
 
 
-def get_renderable_specification() -> ComponentSpecification:
-    """Specification for sprite index used for rendering.
+@jtu.register_pytree_node_class
+@dataclass(frozen=True)
+class Renderable:
+    texture: jnp.ndarray
 
-    Each entity references a texture loaded by the rendering system.  The
-    component stores an integer ``texture_id`` selecting which texture to draw
-    for the entity.  ``0`` is used as the default sprite.
-    """
-    return ComponentSpecification(
-        "Renderable",
-        (),
-        jnp.int32,
-        jnp.array(0, jnp.int32),
-    )
+    def tree_flatten(self):
+        return (self.texture,), None
+
+    @classmethod
+    def tree_unflatten(cls, aux, children):
+        return cls(*children)
