@@ -58,3 +58,4 @@ def grid_movement_system(world: WorldState, key: Key, inputs: Mapping[str, Array
     world = world._with_store(
         "DiscreteAction", world._get_store("DiscreteAction").write(idx, next_action)
     )
+    return world
