@@ -13,5 +13,4 @@ class Team:
 
     @classmethod
     def tree_unflatten(cls, aux, children):
-        id = children
-        return cls(id)
+        return cls(*children)

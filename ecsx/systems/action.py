@@ -47,7 +47,8 @@ def grid_movement_system(world: WorldState, key: Key, inputs: Mapping[str, Array
     next_position = position + directions[action]
     next_position = _apply_collision(world, idx, next_position, position)
 
-    next_position = jnp.where(alive, next_position, position)
+    alive_expanded = alive[:, None]
+    next_position = jnp.where(alive_expanded, next_position, position)
     next_action = jnp.where(alive, jnp.zeros_like(action), action)
 
     position_store = position_store.write(idx, next_position)

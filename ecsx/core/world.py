@@ -111,7 +111,7 @@ class WorldState:
     def tree_unflatten(cls, aux, children):
         component_stores, alive_mask, random_key, time_step, event_buffers = children
         return cls(
-            component_stores, alive_mask, random_key, time_step, event_buffers, aux
+            component_stores, alive_mask, random_key, time_step, aux, event_buffers
         )
 
     def _get_store(self, name: ComponentName) -> ComponentStore:
