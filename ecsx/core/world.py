@@ -1,9 +1,9 @@
 from dataclasses import dataclass, replace
-from typing import Callable, Mapping, Optional
+from typing import Any, Callable, Mapping, Optional
 
 import jax
 import jax.numpy as jnp
-from jax import tree_util
+from jax import tree_util as jtu, tree_util
 
 from ecsx.core.typing import Array, Key, ComponentName, EntityId
 from ecsx.core.component_specification import ComponentSpecification
@@ -20,7 +20,7 @@ class WorldState:
     component_stores: dict[ComponentName, ComponentStore]
     alive_mask: Array
     random_key: Key
-    time_step: Array  # int32
+    time_step: Array
     capacity: int
     event_buffers: dict[str, EventBuffer]
 
@@ -43,14 +43,15 @@ class WorldState:
         new_stores[spec.name] = store
         return replace(self, component_stores=new_stores)
 
+    def _add_batch_dim(self, value: Any) -> Any:
+        return jtu.tree_map(lambda leaf: jnp.asarray(leaf)[jnp.newaxis, ...], value)
+
     def add_component_to_entity(
-        self, name: ComponentName, entity_id: EntityId, value: Array
+        self, name: ComponentName, entity_id: EntityId, value: Any
     ) -> "WorldState":
         store = self._get_store(name)
-        value = store.spec.validate_value(value)
-        store = store.write(
-            jnp.asarray([entity_id], dtype=jnp.int32), value[jnp.newaxis, ...]
-        )
+        batched = self._add_batch_dim(value)
+        store = store.write(jnp.asarray([entity_id], dtype=jnp.int32), batched)
         new_alive = self.alive_mask.at[entity_id].set(True)
         new_stores = dict(self.component_stores)
         new_stores[name] = store
@@ -134,7 +135,6 @@ class World:
             capacity=self._capacity,
             key=(key if key is not None else jax.random.PRNGKey(0)),
         )
-        # sync alive mask initially
         self._world = self._world.with_alive_mask(self._registry.alive_mask)
         self._systems: tuple[SystemFn, ...] = tuple()
 
@@ -143,7 +143,7 @@ class World:
         return self
 
     def attach_component(
-        self, entity_id: EntityId, name: ComponentName, value: Array
+        self, entity_id: EntityId, name: ComponentName, value: Any
     ) -> "World":
         if not bool(self._world.alive_mask[entity_id]):
             raise RuntimeError(f"Entity {entity_id} is not alive; spawn first.")
@@ -162,8 +162,7 @@ class World:
         self._systems = tuple([*self._systems, *systems])
         return self
 
-    def spawn(self, **components: Array) -> EntityId:
-        """Spawn an entity and optionally attach components by name=value."""
+    def spawn(self, **components: Any) -> EntityId:
         eid = self._registry.spawn()
         self._world = self._world.with_alive_mask(self._registry.alive_mask)
         for cname, value in components.items():

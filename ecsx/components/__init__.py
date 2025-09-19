@@ -6,3 +6,4 @@ from .carriable import Carriable
 from .flag import Flag
 from .renderable import Renderable
 from .obstacle import Obstacle
+from .goal import Goal

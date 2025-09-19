@@ -18,25 +18,17 @@ class ActorCritic(nn.Module):
     @nn.compact
     def __call__(self, x):
         activation = nn.relu if self.activation == "relu" else nn.tanh
-        x = nn.Dense(
-            64, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0)
-        )(x)
+        x = nn.Dense(64, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0))(x)
         x = activation(x)
-        x = nn.Dense(
-            64, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0)
-        )(x)
+        x = nn.Dense(64, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0))(x)
         x = activation(x)
         logits = nn.Dense(
             self.action_dim, kernel_init=orthogonal(0.01), bias_init=constant(0.0)
         )(x)
         pi = distrax.Categorical(logits=logits)
-        v = nn.Dense(
-            64, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0)
-        )(x)
+        v = nn.Dense(64, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0))(x)
         v = activation(v)
-        v = nn.Dense(
-            64, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0)
-        )(v)
+        v = nn.Dense(64, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0))(v)
         v = activation(v)
         value = nn.Dense(1, kernel_init=orthogonal(1.0), bias_init=constant(0.0))(v)
         return pi, jnp.squeeze(value, axis=-1)
@@ -54,7 +46,7 @@ class Transition(NamedTuple):
 
 def make_train(config: dict[str, Any]):
     env = build_capture_the_flag(
-        team_size=config["TEAM_SIZE"], map_size=config["MAP_SIZE"]
+        team_size=config["TEAM_SIZE"], map_size=config["MAP_SIZE"], render=False
     )
     num_agents = int(env.agent_indices.shape[0])
     dummy_state, dummy_ts = env.reset(jax.random.PRNGKey(0))
@@ -65,7 +57,9 @@ def make_train(config: dict[str, Any]):
         // (config["NUM_ENVS"] * num_agents)
     )
     config["MINIBATCH_SIZE"] = (
-        config["NUM_ENVS"] * num_agents * config["NUM_STEPS"]
+        config["NUM_ENVS"]
+        * num_agents
+        * config["NUM_STEPS"]
         // config["NUM_MINIBATCHES"]
     )
 
@@ -142,7 +136,10 @@ def make_train(config: dict[str, Any]):
                     )
                     gae = (
                         delta
-                        + config["GAMMA"] * config["GAE_LAMBDA"] * (1 - transition.done) * gae
+                        + config["GAMMA"]
+                        * config["GAE_LAMBDA"]
+                        * (1 - transition.done)
+                        * gae
                     )
                     return (gae, transition.value), gae
 
@@ -169,17 +166,20 @@ def make_train(config: dict[str, Any]):
                         ).clip(-config["CLIP_EPS"], config["CLIP_EPS"])
                         value_losses = jnp.square(value - targets)
                         value_losses_clipped = jnp.square(value_pred_clipped - targets)
-                        value_loss = 0.5 * jnp.maximum(
-                            value_losses, value_losses_clipped
-                        ).mean()
+                        value_loss = (
+                            0.5 * jnp.maximum(value_losses, value_losses_clipped).mean()
+                        )
                         ratio = jnp.exp(log_prob - traj_batch.log_prob)
                         gae = (gae - gae.mean()) / (gae.std() + 1e-8)
                         loss_actor1 = ratio * gae
-                        loss_actor2 = jnp.clip(
-                            ratio,
-                            1.0 - config["CLIP_EPS"],
-                            1.0 + config["CLIP_EPS"],
-                        ) * gae
+                        loss_actor2 = (
+                            jnp.clip(
+                                ratio,
+                                1.0 - config["CLIP_EPS"],
+                                1.0 + config["CLIP_EPS"],
+                            )
+                            * gae
+                        )
                         loss_actor = -jnp.minimum(loss_actor1, loss_actor2).mean()
                         entropy = pi.entropy().mean()
                         total_loss = (
