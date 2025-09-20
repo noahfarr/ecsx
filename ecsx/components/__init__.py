@@ -7,5 +7,5 @@ from .flag import Flag
 from .renderable import Renderable
 from .obstacle import Obstacle
 from .goal import Goal
-from .intent import Move, Aim, Fire
 from .agent import Agent
+from .move import Move
