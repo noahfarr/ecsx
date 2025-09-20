@@ -15,3 +15,6 @@ class Position:
     @classmethod
     def tree_unflatten(cls, aux, children):
         return cls(*children)
+
+    def __repr__(self):
+        return f"Position(x={self.x}, y={self.y})"

@@ -5,11 +5,11 @@ from jax import tree_util as jtu
 
 @jtu.register_pytree_node_class
 @dataclass(frozen=True)
-class Renderable:
-    id: jnp.ndarray
+class Counter:
+    count: jnp.ndarray
 
     def tree_flatten(self):
-        return (self.id,), None
+        return (self.count,), ()
 
     @classmethod
     def tree_unflatten(cls, aux, children):

@@ -1,14 +1,14 @@
 from dataclasses import dataclass
 from jax import tree_util as jtu
 
-from ecsx.components import Position, Team, Carriable
+from ecsx.components import Position, Team, Carriable, Agent
 
 
 @jtu.register_pytree_node_class
 @dataclass(frozen=True)
 class Flag:
     position: Position
-    owner: Team
+    owner: Agent
     carriable: Carriable
 
     def tree_flatten(self):

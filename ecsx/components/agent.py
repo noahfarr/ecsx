@@ -2,16 +2,17 @@ from dataclasses import dataclass
 import jax.numpy as jnp
 from jax import tree_util as jtu
 
+from ecsx.components import Position, Team, Carriable
+
 
 @jtu.register_pytree_node_class
 @dataclass(frozen=True)
-class MultiDiscreteAction:
-    value: jnp.ndarray
-    n: jnp.ndarray
-    dtype: jnp.dtype = jnp.int32
+class Agent:
+    position: Position
+    team: Team
 
     def tree_flatten(self):
-        return (self.value, self.n, self.dtype), None
+        return (self.position, self.team), None
 
     @classmethod
     def tree_unflatten(cls, aux, children):

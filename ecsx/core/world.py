@@ -11,7 +11,7 @@ from ecsx.core.component_store import ComponentStore
 from ecsx.core.entity_registry import EntityRegistry
 from ecsx.core.event_specification import EventSpecification
 from ecsx.core.event_buffer import EventBuffer
-from ecsx.core.system import SystemFn, build_step
+from ecsx.core.system import System, build_step
 
 
 @tree_util.register_pytree_node_class
@@ -136,7 +136,7 @@ class World:
             key=(key if key is not None else jax.random.PRNGKey(0)),
         )
         self._world = self._world.with_alive_mask(self._registry.alive_mask)
-        self._systems: tuple[SystemFn, ...] = tuple()
+        self._systems: tuple[System, ...] = tuple()
 
     def register_component(self, specification: ComponentSpecification) -> "World":
         self._world = self._world.register_component(specification)
@@ -158,7 +158,7 @@ class World:
         self._world = self._world.register_event_buffer(specification)
         return self
 
-    def add_systems(self, *systems: SystemFn) -> "World":
+    def add_systems(self, *systems: System) -> "World":
         self._systems = tuple([*self._systems, *systems])
         return self
 

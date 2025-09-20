@@ -9,7 +9,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from .world import WorldState
 
 
-class SystemFn(Protocol):
+class System(Protocol):
     """Callable transforming the world state.
 
     Systems operate purely: they must not mutate the input ``WorldState`` in
@@ -28,7 +28,7 @@ def set_random_key(world: "WorldState", key: Key) -> "WorldState":
 
 
 def build_step(
-    systems: Tuple[SystemFn, ...]
+    systems: Tuple[System, ...]
 ) -> Callable[["WorldState", Mapping[str, Array]], "WorldState"]:
     """Compose a sequence of systems into a single step function.
 
@@ -39,9 +39,9 @@ def build_step(
     def step(world: "WorldState", inputs: Mapping[str, Array]) -> "WorldState":
         world = world.reset_event_buffers()
         key = world.random_key
-        for sys in systems:
+        for system in systems:
             key, sub = jax.random.split(key)
-            world = sys(set_random_key(world, sub), sub, inputs)
+            world = system(set_random_key(world, sub), sub, inputs)
         return replace(
             world,
             random_key=key,

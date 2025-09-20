@@ -5,15 +5,12 @@ from jax import tree_util as jtu
 
 @jtu.register_pytree_node_class
 @dataclass(frozen=True)
-class ContinuousAction:
-    value: jnp.ndarray
-    shape: jnp.ndarray
-    low: jnp.ndarray
-    high: jnp.ndarray
-    dtype: jnp.dtype
+class Move:
+    vx: jnp.ndarray
+    vy: jnp.ndarray
 
     def tree_flatten(self):
-        return (self.value, self.shape, self.low, self.high, self.dtype), None
+        return (self.vx, self.vy), None
 
     @classmethod
     def tree_unflatten(cls, aux, children):
