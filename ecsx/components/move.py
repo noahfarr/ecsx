@@ -5,16 +5,13 @@ from jax import tree_util as jtu
 
 @jtu.register_pytree_node_class
 @dataclass(frozen=True)
-class Position:
-    x: jnp.ndarray
-    y: jnp.ndarray
+class Move:
+    vx: jnp.ndarray
+    vy: jnp.ndarray
 
     def tree_flatten(self):
-        return (self.x, self.y), None
+        return (self.vx, self.vy), None
 
     @classmethod
     def tree_unflatten(cls, aux, children):
         return cls(*children)
-
-    def __repr__(self):
-        return f"Position(x={self.x}, y={self.y})"

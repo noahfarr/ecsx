@@ -1,18 +1,31 @@
 from dataclasses import dataclass
-from typing import Any
-
 import jax.numpy as jnp
+from jax import tree_util as jtu
+
+from .typing import PyTree
 
 
 @dataclass(frozen=True)
 class ComponentSpecification:
-    name: str
-    shape: tuple[int, ...]
-    dtype: jnp.dtype
-    default_value: Any
+    """
+    Specification for a dataclass (PyTree) component.
 
-    def validate_value(self, value) -> jnp.ndarray:
-        arr = jnp.asarray(value, self.dtype)
-        if arr.shape != self.shape:
-            raise ValueError(f"{self.name}: got {arr.shape}, expected {self.shape}")
-        return arr
+    - name:     logical component name
+    - prototype: a SINGLE-ENTITY default instance of the component (PyTree).
+                 Each leaf should be a jnp.ndarray (or array-like) with shape leaf_shape (no batch dim).
+    """
+
+    name: str
+    prototype: PyTree
+
+    def treedef(self) -> jtu.PyTreeDef:
+        return jtu.tree_structure(self.prototype)
+
+    def leaves(self):
+        return jtu.tree_leaves(self.prototype)
+
+    def leaf_shapes(self) -> list[tuple[int, ...]]:
+        return [tuple(jnp.asarray(leave).shape) for leave in self.leaves()]
+
+    def leaf_dtypes(self) -> list[jnp.dtype]:
+        return [jnp.asarray(leave).dtype for leave in self.leaves()]
