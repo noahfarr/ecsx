@@ -9,7 +9,7 @@ from ecsx.components import (
     Velocity,
     Move,
 )
-from ecsx.systems.intent import _move_system
+from ecsx.systems.move import move_system
 
 
 def main() -> None:
@@ -49,7 +49,7 @@ def main() -> None:
     print("Positions:")
     print(world.get_store("Position").data)
 
-    world.add_systems(_move_system)
+    world.add_systems(move_system)
     world = world.step(inputs={"move_store": "Move", "position_store": "Position"})
 
     print("Positions:")

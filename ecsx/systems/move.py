@@ -20,6 +20,6 @@ def move_system(world: WorldState, key: Key, inputs: Mapping[str, Any]) -> World
 
     position_store = position_store.write(world.alive_mask, Position(x=x, y=y))
 
-    world = world._with_store(inputs["move_store"], move_store)
+    world = world._with_store(inputs["position_store"], position_store)
 
     return world

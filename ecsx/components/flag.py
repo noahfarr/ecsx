@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from jax import tree_util as jtu
 
-from ecsx.components import Position, Team, Carriable, Agent
+from ecsx.components import Position, Carriable, Agent
 
 
 @jtu.register_pytree_node_class
